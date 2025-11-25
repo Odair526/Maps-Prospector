@@ -37,7 +37,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
   return (
     <div 
       className="group relative backdrop-blur-sm rounded-2xl p-5 shadow-sm transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards
-        bg-white/80 border border-white/50 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200
+        bg-white border border-gray-200 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-300
         dark:bg-slate-800/80 dark:border-slate-700/50 dark:hover:border-blue-500/30 dark:hover:shadow-blue-900/10"
       style={style}
     >
@@ -54,18 +54,18 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
           </div>
           <div className="flex-grow min-w-0">
             <h3 className="text-lg font-bold leading-tight truncate group-hover:text-blue-600 transition-colors
-              text-gray-800 dark:text-gray-100 dark:group-hover:text-blue-400">
+              text-gray-900 dark:text-gray-100 dark:group-hover:text-blue-400">
               {contact.nome}
             </h3>
             <div className="flex items-center gap-2 mt-1">
                {/* Rating Display */}
                {contact.rating ? (
                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md border
-                   bg-yellow-50 border-yellow-100
+                   bg-yellow-50 border-yellow-200
                    dark:bg-yellow-900/20 dark:border-yellow-900/40">
-                   <span className="text-xs font-bold text-yellow-700 dark:text-yellow-500">{contact.rating}</span>
+                   <span className="text-xs font-bold text-yellow-800 dark:text-yellow-500">{contact.rating}</span>
                    {renderStars(contact.rating)}
-                   <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">({contact.reviewCount || 0})</span>
+                   <span className="text-[10px] font-medium text-gray-500 dark:text-gray-500">({contact.reviewCount || 0})</span>
                  </div>
                ) : (
                  <p className="text-xs text-gray-400 flex items-center gap-1">
@@ -83,17 +83,17 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
         {/* Phone / WhatsApp */}
         {contact.telefone && contact.telefone !== "Não disponível no Maps" && (
           <div className="flex items-center justify-between p-2 rounded-lg transition-colors border border-transparent
-            bg-gray-50/50 hover:bg-blue-50/50 hover:border-blue-100
+            bg-gray-50 hover:bg-blue-50 hover:border-blue-100
             dark:bg-slate-700/30 dark:hover:bg-slate-700/50 dark:hover:border-slate-600">
             <div className="flex items-center gap-3 overflow-hidden">
                <div className={`p-1.5 rounded-md ${
                  contact.whatsapp 
-                   ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
-                   : 'bg-gray-200 text-gray-500 dark:bg-slate-600 dark:text-gray-400'
+                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                   : 'bg-gray-200 text-gray-600 dark:bg-slate-600 dark:text-gray-400'
                }`}>
                  {contact.whatsapp ? <MessageCircle className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
                </div>
-               <span className="font-medium truncate">{contact.telefone}</span>
+               <span className="font-medium truncate text-gray-800 dark:text-gray-200">{contact.telefone}</span>
             </div>
             
             {contact.whatsapp && (
@@ -101,7 +101,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
                 href={getWhatsAppUrl(contact.telefone)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 text-xs bg-green-500 text-white px-2 py-1 rounded-md font-medium hover:bg-green-600 transition-colors flex items-center gap-1 shadow-sm shadow-green-200 dark:shadow-none"
+                className="flex-shrink-0 text-xs bg-green-600 text-white px-2 py-1 rounded-md font-medium hover:bg-green-700 transition-colors flex items-center gap-1 shadow-sm shadow-green-200 dark:shadow-none"
               >
                 Abrir <ExternalLink className="w-3 h-3" />
               </a>
@@ -112,9 +112,9 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
         {/* Email */}
         {contact.email && contact.email !== "Não disponível no Maps" && (
           <div className="flex items-center gap-3 px-2">
-            <Mail className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <a href={`mailto:${contact.email}`} className="hover:text-red-500 transition-colors truncate border-b border-transparent hover:border-red-200
-              text-gray-600 dark:text-gray-300 dark:hover:text-red-400 dark:hover:border-red-900">
+            <Mail className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <a href={`mailto:${contact.email}`} className="hover:text-red-600 transition-colors truncate border-b border-transparent hover:border-red-200
+              text-gray-700 dark:text-gray-300 dark:hover:text-red-400 dark:hover:border-red-900">
               {contact.email}
             </a>
           </div>
@@ -123,8 +123,8 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
         {/* Website */}
         {contact.website && contact.website !== "Não disponível no Maps" && (
            <div className="flex items-center gap-3 px-2">
-             <Globe className="w-4 h-4 text-blue-400 flex-shrink-0" />
-             <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate dark:text-blue-400">
+             <Globe className="w-4 h-4 text-blue-500 flex-shrink-0" />
+             <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline truncate dark:text-blue-400">
                {contact.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
              </a>
            </div>
@@ -134,7 +134,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
         {contact.instagram && contact.instagram !== "Não disponível no Maps" && (
            <div className="flex items-center gap-3 px-2">
              <Instagram className="w-4 h-4 text-pink-500 flex-shrink-0" />
-             <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline truncate dark:text-pink-400">
+             <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-700 hover:underline truncate dark:text-pink-400">
                Perfil do Instagram
              </a>
            </div>
@@ -163,8 +163,8 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
         {/* Address */}
         {contact.endereco && contact.endereco !== "Não disponível no Maps" && (
           <div className="flex items-start gap-3 px-2 pt-1">
-            <MapPin className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-            <span className="leading-snug text-xs text-gray-500 dark:text-gray-400">{contact.endereco}</span>
+            <MapPin className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+            <span className="leading-snug text-xs text-gray-600 dark:text-gray-400">{contact.endereco}</span>
           </div>
         )}
       </div>
@@ -175,7 +175,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, index }) => {
           target="_blank" 
           rel="noopener noreferrer"
           className="mt-4 flex items-center justify-center w-full py-2.5 gap-2 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden group-hover:shadow-md
-            text-gray-600 bg-gray-100 hover:bg-blue-600 hover:text-white
+            text-gray-700 bg-gray-100 hover:bg-blue-600 hover:text-white
             dark:text-gray-300 dark:bg-slate-700 dark:hover:bg-blue-500 dark:hover:text-white"
         >
           <span className="relative z-10 flex items-center gap-2">
