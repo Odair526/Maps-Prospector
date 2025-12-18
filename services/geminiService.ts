@@ -36,28 +36,29 @@ const parseJSONResponse = (text: string): BusinessContact[] => {
 
 export const searchBusinesses = async (params: SearchParams, latLng?: { latitude: number; longitude: number }): Promise<BusinessContact[]> => {
   if (!process.env.API_KEY) {
-    throw new Error("API Key ausente.");
+    throw new Error("API Key ausente no ambiente de execução.");
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // O modelo 2.5-flash é o exigido para Maps Grounding
   const model = "gemini-2.5-flash";
 
   const excludeStr = params.excludeNames?.length 
-    ? `Não inclua estas empresas no resultado final: ${params.excludeNames.join(', ')}.` 
+    ? `Ignore estas empresas já capturadas: ${params.excludeNames.join(', ')}.` 
     : '';
 
   const prompt = `
-    Aja como um Robô de Prospecção Avançado.
-    Sua missão é localizar contatos públicos de empresas para o nicho "${params.niche}" próximo a "${params.location}".
+    Aja como um Agente de Prospecção Digital Avançado.
+    Sua missão é localizar contatos públicos reais para o nicho "${params.niche}" em "${params.location}".
     Raio de busca: ${params.radius || '5km'}.
     ${excludeStr}
 
-    INSTRUÇÕES:
-    1. Use a ferramenta 'googleMaps' para obter dados reais de localização, telefone e avaliações.
-    2. Use a ferramenta 'googleSearch' para encontrar emails e redes sociais (Instagram, Facebook, LinkedIn) nos sites dessas empresas.
-    3. Retorne OBRIGATORIAMENTE um array JSON dentro de um bloco de código Markdown.
+    REGRAS:
+    1. Utilize a ferramenta 'googleMaps' para obter endereços, telefones e ratings.
+    2. Utilize a ferramenta 'googleSearch' para enriquecer os resultados com emails e links de redes sociais.
+    3. Retorne OBRIGATORIAMENTE um array JSON dentro de um bloco de código markdown.
     
-    Campos por objeto: nome, telefone, whatsapp (boolean), email, website, instagram, facebook, linkedin, endereco, link_maps, rating, reviewCount.
+    Campos do JSON: nome, telefone, whatsapp (booleano), email, website, instagram, facebook, linkedin, endereco, link_maps, rating, reviewCount.
   `;
 
   const response = await ai.models.generateContent({
