@@ -2,12 +2,18 @@
   "name": "maps-prospector-ai",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@google/genai": "^1.30.0",
     "firebase": "^11.1.0",
     "lucide-react": "^0.554.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
   },
   "scripts": {
     "dev": "vite",
