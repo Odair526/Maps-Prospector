@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { RobotMascot } from './RobotMascot';
@@ -58,10 +59,10 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-green-50 flex items-center justify-center p-4 relative overflow-hidden font-sans">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-blue-400/20 rounded-full blur-[100px] opacity-40 animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[35rem] h-[35rem] bg-purple-400/20 rounded-full blur-[100px] opacity-40 animate-pulse delay-1000" />
+        <div className="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-green-400/20 rounded-full blur-[100px] opacity-40 animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[35rem] h-[35rem] bg-emerald-400/20 rounded-full blur-[100px] opacity-40 animate-pulse delay-1000" />
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.3 }}></div>
       </div>
 

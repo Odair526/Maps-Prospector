@@ -2,15 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { BusinessContact, SearchParams } from "../types";
 
-// Helper to extract JSON from the model's text response
 const parseJSONResponse = (text: string): BusinessContact[] => {
   try {
     const jsonMatch = text.match(/```json\s*(\[[\s\S]*?\])\s*```/) || text.match(/(\[[\s\S]*?\])/);
-    
     if (jsonMatch) {
       const jsonStr = (jsonMatch[1] || jsonMatch[0]).trim();
       const parsed = JSON.parse(jsonStr);
-      
       if (Array.isArray(parsed)) {
         return parsed.map((item: any) => ({
           nome: item.nome || item.name || "Empresa sem nome",
@@ -36,20 +33,13 @@ const parseJSONResponse = (text: string): BusinessContact[] => {
   }
 };
 
-/**
- * Searches for businesses using Gemini with Google Maps and Google Search grounding.
- * Strictly follows SDK guidelines for model selection and tool usage.
- */
 export const searchBusinesses = async (params: SearchParams, latLng?: { latitude: number; longitude: number }): Promise<BusinessContact[]> => {
-  // Always use process.env.API_KEY as requested
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY ausente no ambiente de execução.");
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API_KEY não configurada no ambiente.");
   }
 
-  // Create instance right before call as per guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // 'gemini-2.5-flash' is mandatory for Google Maps grounding
+  const ai = new GoogleGenAI({ apiKey });
   const model = "gemini-2.5-flash";
 
   const excludeStr = params.excludeNames?.length 
@@ -74,7 +64,6 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
     model: model,
     contents: prompt,
     config: {
-      // Maps grounding tool and Search grounding tool
       tools: [{ googleMaps: {} }, { googleSearch: {} }],
       toolConfig: latLng ? {
         retrievalConfig: {
@@ -85,13 +74,9 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
     },
   });
 
-  // Extract the raw text.
   const rawText = response.text || "";
   const contacts = parseJSONResponse(rawText);
 
-  /**
-   * MANDATORY: Extract URLs from groundingChunks and list them on the web app.
-   */
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
   if (chunks && contacts.length > 0) {
     contacts.forEach(contact => {
@@ -104,12 +89,8 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
       });
 
       if (match) {
-        if (match.maps && match.maps.uri) {
-          contact.link_maps = match.maps.uri;
-        }
-        if (match.web && match.web.uri && (contact.website === "Não disponível" || !contact.website)) {
-          contact.website = match.web.uri;
-        }
+        if (match.maps && match.maps.uri) contact.link_maps = match.maps.uri;
+        if (match.web && match.web.uri && !contact.website) contact.website = match.web.uri;
       }
     });
   }

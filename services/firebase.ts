@@ -1,14 +1,11 @@
 
-// Use compat versions to resolve "no exported member" errors in the current environment
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 /**
  * Firebase configuration.
- * Configurado para aceitar as chaves exatamente como definidas no ambiente do usuário.
- * Note: Em ambientes Vite padrão, variáveis sem o prefixo VITE_ podem ser filtradas.
- * Certifique-se de que seu ambiente de hospedagem (Vercel) está expondo estas chaves.
+ * As chaves agora são injetadas pelo Vite via vite.config.ts
  */
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -19,7 +16,7 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID
 };
 
-// Initialize Firebase using the compat pattern to resolve environment export issues
+// Inicialização segura do Firebase
 const app = firebase.apps.length === 0 ? firebase.initializeApp(firebaseConfig) : firebase.app();
 
 export const auth = firebase.auth();
