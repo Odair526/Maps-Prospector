@@ -38,7 +38,7 @@ export default function App() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-green-50 dark:bg-green-950 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-50 dark:bg-slate-950 flex items-center justify-center">
          <div className="flex flex-col items-center gap-4">
            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
            <p className="text-gray-500 dark:text-gray-400 font-medium">Carregando...</p>
@@ -75,13 +75,13 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen relative overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-green-950 text-white' : 'bg-green-50 text-gray-900'}`}>
+    <div className={`min-h-screen relative overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-blue-50 text-gray-900'}`}>
       <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
       
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className={`absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] rounded-full blur-[100px] opacity-40 animate-pulse ${isDarkMode ? 'bg-green-900/30' : 'bg-green-300/20'}`} />
-        <div className={`absolute bottom-[-10%] left-[-10%] w-[35rem] h-[35rem] rounded-full blur-[100px] opacity-40 animate-pulse delay-1000 ${isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-300/20'}`} />
+        <div className={`absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] rounded-full blur-[100px] opacity-40 animate-pulse ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-300/20'}`} />
+        <div className={`absolute bottom-[-10%] left-[-10%] w-[35rem] h-[35rem] rounded-full blur-[100px] opacity-40 animate-pulse delay-1000 ${isDarkMode ? 'bg-cyan-900/20' : 'bg-cyan-300/20'}`} />
         <div className={`absolute inset-0 ${isDarkMode ? 'opacity-10' : 'opacity-[0.03]'}`} style={{ backgroundImage: `radial-gradient(${isDarkMode ? '#475569' : '#0f172a'} 1px, transparent 1px)`, backgroundSize: '30px 30px' }}></div>
       </div>
 
@@ -135,7 +135,7 @@ export default function App() {
 
         {state === AppState.IDLE && (
           <div className="mt-4 text-center opacity-40 max-w-md mx-auto">
-             <div className={`w-16 h-1 rounded-full mx-auto mb-4 ${isDarkMode ? 'bg-green-700' : 'bg-green-300'}`}></div>
+             <div className={`w-16 h-1 rounded-full mx-auto mb-4 ${isDarkMode ? 'bg-blue-700' : 'bg-blue-300'}`}></div>
              <p className="text-sm">Configure sua busca para começar a prospectar.</p>
           </div>
         )}
