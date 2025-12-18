@@ -41,9 +41,9 @@ const parseJSONResponse = (text: string): BusinessContact[] => {
  * Strictly follows SDK guidelines for model selection and tool usage.
  */
 export const searchBusinesses = async (params: SearchParams, latLng?: { latitude: number; longitude: number }): Promise<BusinessContact[]> => {
-  // Always use process.env.API_KEY
+  // Always use process.env.API_KEY as requested
   if (!process.env.API_KEY) {
-    throw new Error("API Key ausente no ambiente de execução.");
+    throw new Error("API_KEY ausente no ambiente de execução.");
   }
 
   // Create instance right before call as per guidelines
@@ -85,18 +85,16 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
     },
   });
 
-  // Extract the raw text. Guidelines state response.text is a property, not a method.
+  // Extract the raw text.
   const rawText = response.text || "";
   const contacts = parseJSONResponse(rawText);
 
   /**
    * MANDATORY: Extract URLs from groundingChunks and list them on the web app.
-   * We enrich the parsed JSON contacts with official URLs from the grounding metadata.
    */
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
   if (chunks && contacts.length > 0) {
     contacts.forEach(contact => {
-      // Find a matching chunk by title if possible
       const match = chunks.find((chunk: any) => {
         const mapsTitle = chunk.maps?.title?.toLowerCase();
         const webTitle = chunk.web?.title?.toLowerCase();
@@ -106,11 +104,9 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
       });
 
       if (match) {
-        // Prefer official Maps URL from metadata if available
         if (match.maps && match.maps.uri) {
           contact.link_maps = match.maps.uri;
         }
-        // Enrich with search result URL if website is missing
         if (match.web && match.web.uri && (contact.website === "Não disponível" || !contact.website)) {
           contact.website = match.web.uri;
         }
