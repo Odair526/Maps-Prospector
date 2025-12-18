@@ -2,6 +2,32 @@
 import { GoogleGenAI } from "@google/genai";
 import { BusinessContact, SearchParams } from "../types";
 
+// Helper to safely get API Key in different environments (Vite/Vercel/Node)
+const getApiKey = (): string => {
+  // 1. Try Vite standard (Vercel uses this if built with Vite)
+  // We use try-catch/typeof to avoid ReferenceErrors if import.meta is not defined
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
+    }
+  } catch (e) {
+    // Ignore
+  }
+
+  // 2. Try Node/Process standard (Fallback)
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    // Ignore
+  }
+
+  return '';
+};
+
 const parseJSONResponse = (text: string): BusinessContact[] => {
   try {
     // Attempt to find a JSON array block in the markdown
@@ -213,17 +239,17 @@ const fetchBatch = async (ai: GoogleGenAI, params: SearchParams, currentExclusio
 };
 
 export const searchBusinesses = async (params: SearchParams): Promise<BusinessContact[]> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key not found");
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("API Key not configured. Please set VITE_API_KEY (Vercel) or API_KEY (Local).");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   
   let allContacts: BusinessContact[] = [];
   let excludeList: string[] = params.excludeNames ? [...params.excludeNames] : [];
   
-  // Adjust goal based on Deep Search: Deep search is slower, so we fetch slightly fewer but higher quality if filters are on.
-  // If no filters, we aim for volume (50).
+  // Adjust goal based on Deep Search
   const isDeepSearch = params.deepSearchInstagram || params.deepSearchFacebook || params.deepSearchLinkedin || params.deepSearchWeb;
   const TARGET_MIN = isDeepSearch ? 30 : 50; 
   
@@ -243,7 +269,7 @@ export const searchBusinesses = async (params: SearchParams): Promise<BusinessCo
       const uniqueNewContacts = newBatch.filter(c => !excludeList.includes(c.nome));
       if (uniqueNewContacts.length === 0) break;
       
-      // If Deep Search is active, sort by "completeness" (how many social links were found)
+      // If Deep Search is active, sort by "completeness"
       if (isDeepSearch) {
          sortContacts(uniqueNewContacts);
       }
@@ -253,7 +279,7 @@ export const searchBusinesses = async (params: SearchParams): Promise<BusinessCo
       excludeList = [...excludeList, ...newNames];
       attempts++;
 
-      // If we are getting good results, give the API a breather
+      // API Throttling safety
       if (allContacts.length < TARGET_MIN) {
         await new Promise(r => setTimeout(r, 1500));
       }
