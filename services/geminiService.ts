@@ -1,6 +1,8 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { BusinessContact, SearchParams } from "../types";
 
+// Helper to extract JSON from the model's text response
 const parseJSONResponse = (text: string): BusinessContact[] => {
   try {
     const jsonMatch = text.match(/```json\s*(\[[\s\S]*?\])\s*```/) || text.match(/(\[[\s\S]*?\])/);
@@ -34,13 +36,20 @@ const parseJSONResponse = (text: string): BusinessContact[] => {
   }
 };
 
+/**
+ * Searches for businesses using Gemini with Google Maps and Google Search grounding.
+ * Strictly follows SDK guidelines for model selection and tool usage.
+ */
 export const searchBusinesses = async (params: SearchParams, latLng?: { latitude: number; longitude: number }): Promise<BusinessContact[]> => {
+  // Always use process.env.API_KEY
   if (!process.env.API_KEY) {
     throw new Error("API Key ausente no ambiente de execução.");
   }
 
+  // Create instance right before call as per guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  // O modelo 2.5-flash é o exigido para Maps Grounding
+  
+  // 'gemini-2.5-flash' is mandatory for Google Maps grounding
   const model = "gemini-2.5-flash";
 
   const excludeStr = params.excludeNames?.length 
@@ -65,6 +74,7 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
     model: model,
     contents: prompt,
     config: {
+      // Maps grounding tool and Search grounding tool
       tools: [{ googleMaps: {} }, { googleSearch: {} }],
       toolConfig: latLng ? {
         retrievalConfig: {
@@ -75,5 +85,38 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
     },
   });
 
-  return parseJSONResponse(response.text || "");
+  // Extract the raw text. Guidelines state response.text is a property, not a method.
+  const rawText = response.text || "";
+  const contacts = parseJSONResponse(rawText);
+
+  /**
+   * MANDATORY: Extract URLs from groundingChunks and list them on the web app.
+   * We enrich the parsed JSON contacts with official URLs from the grounding metadata.
+   */
+  const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+  if (chunks && contacts.length > 0) {
+    contacts.forEach(contact => {
+      // Find a matching chunk by title if possible
+      const match = chunks.find((chunk: any) => {
+        const mapsTitle = chunk.maps?.title?.toLowerCase();
+        const webTitle = chunk.web?.title?.toLowerCase();
+        const contactName = contact.nome.toLowerCase();
+        return (mapsTitle && contactName.includes(mapsTitle)) || 
+               (webTitle && contactName.includes(webTitle));
+      });
+
+      if (match) {
+        // Prefer official Maps URL from metadata if available
+        if (match.maps && match.maps.uri) {
+          contact.link_maps = match.maps.uri;
+        }
+        // Enrich with search result URL if website is missing
+        if (match.web && match.web.uri && (contact.website === "Não disponível" || !contact.website)) {
+          contact.website = match.web.uri;
+        }
+      }
+    });
+  }
+
+  return contacts;
 };

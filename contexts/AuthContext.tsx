@@ -1,15 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signOut,
-  updateProfile as firebaseUpdateProfile
-} from 'firebase/auth';
+// Import firebase for compat types and providers
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
 import { auth } from '../services/firebase';
 
 interface AuthContextType {
@@ -29,7 +23,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    // Listen for authentication state changes using the compat method
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
       if (firebaseUser) {
         setUser({
           id: firebaseUser.uid,
@@ -46,25 +41,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
   };
 
   const login = async (email: string, pass: string) => {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await auth.signInWithEmailAndPassword(email, pass);
   };
 
   const register = async (name: string, email: string, pass: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    await firebaseUpdateProfile(userCredential.user, {
-      displayName: name,
-      photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff&rounded=true&bold=true`
-    });
+    const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+    if (userCredential.user) {
+      await userCredential.user.updateProfile({
+        displayName: name,
+        photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff&rounded=true&bold=true`
+      });
+      // Force update local user state
+      setUser({
+        id: userCredential.user.uid,
+        name: name,
+        email: email,
+        photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff&rounded=true&bold=true`
+      });
+    }
   };
 
   const updateProfile = async (data: Partial<User>) => {
     if (auth.currentUser) {
-      await firebaseUpdateProfile(auth.currentUser, {
+      await auth.currentUser.updateProfile({
         displayName: data.name,
         photoURL: data.photoUrl
       });
@@ -72,7 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => signOut(auth);
+  const logout = () => auth.signOut();
 
   return (
     <AuthContext.Provider value={{ user, isLoading, loginWithGoogle, login, register, logout, updateProfile }}>

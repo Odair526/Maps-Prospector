@@ -2,18 +2,6 @@
 import { useState, useEffect } from 'react';
 import { SearchHistoryItem, SearchParams, User } from '../types';
 import { db } from '../services/firebase';
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  onSnapshot, 
-  orderBy, 
-  deleteDoc, 
-  doc, 
-  writeBatch,
-  getDocs
-} from 'firebase/firestore';
 
 export const useHistory = (user: User | null) => {
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -25,19 +13,17 @@ export const useHistory = (user: User | null) => {
       return;
     }
 
-    const q = query(
-      collection(db, "searches"),
-      where("userId", "==", user.id),
-      orderBy("timestamp", "desc")
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const historyItems = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as SearchHistoryItem[];
-      setSearchHistory(historyItems);
-    });
+    // Use compat Firestore query syntax
+    const unsubscribe = db.collection("searches")
+      .where("userId", "==", user.id)
+      .orderBy("timestamp", "desc")
+      .onSnapshot((snapshot) => {
+        const historyItems = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as SearchHistoryItem[];
+        setSearchHistory(historyItems);
+      });
 
     return () => unsubscribe();
   }, [user]);
@@ -45,7 +31,7 @@ export const useHistory = (user: User | null) => {
   const addToHistory = async (params: SearchParams, count: number) => {
     if (!user) return;
     try {
-      await addDoc(collection(db, "searches"), {
+      await db.collection("searches").add({
         userId: user.id,
         timestamp: Date.now(),
         params: { ...params },
@@ -59,7 +45,7 @@ export const useHistory = (user: User | null) => {
   const deleteHistoryItem = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await deleteDoc(doc(db, "searches", id));
+      await db.collection("searches").doc(id).delete();
     } catch (e) {
       console.error("Erro ao deletar item", e);
     }
@@ -68,11 +54,14 @@ export const useHistory = (user: User | null) => {
   const clearHistory = async () => {
     if (!user) return;
     if (window.confirm("Deseja realmente limpar todo o histórico na nuvem?")) {
-      const q = query(collection(db, "searches"), where("userId", "==", user.id));
-      const snapshot = await getDocs(q);
-      const batch = writeBatch(db);
-      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
+      try {
+        const snapshot = await db.collection("searches").where("userId", "==", user.id).get();
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+      } catch (e) {
+        console.error("Erro ao limpar histórico", e);
+      }
     }
   };
 
