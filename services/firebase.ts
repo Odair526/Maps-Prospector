@@ -11,9 +11,8 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID || ""
 };
 
-// Verifica se já existe um app inicializado para evitar o erro de re-registro
+// Singleton: Garante uma única instância do App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Exporta as instâncias já vinculadas ao app inicializado
 export const auth = getAuth(app);
 export const db = getFirestore(app);

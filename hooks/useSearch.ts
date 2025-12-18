@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { AppState, SearchParams, BusinessContact } from '../types';
 import { searchBusinesses } from '../services/geminiService';
@@ -32,28 +31,21 @@ export const useSearch = (onSearchSuccess: (params: SearchParams, count: number)
     return () => clearInterval(interval);
   }, [state, isLoadingMore]);
 
-  const getErrorMessage = (err: any): string => {
-    if (typeof err === 'string') return err;
-    if (err instanceof Error) return err.message;
-    if (err && typeof err === 'object') {
-      if (err.message) return String(err.message);
-      if (err.error?.message) return String(err.error.message);
-      try { return JSON.stringify(err); } catch { return "Erro desconhecido"; }
-    }
-    return String(err);
+  const getUserLocation = (): Promise<{ latitude: number; longitude: number } | undefined> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(undefined);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve(undefined),
+        { timeout: 5000 }
+      );
+    });
   };
 
   const handleSearch = async (e: React.FormEvent | React.MouseEvent, isFastMode: boolean = false) => {
     if (e) e.preventDefault();
     
-    if (!params.location || !params.niche) {
-      const form = document.getElementById('search-form') as HTMLFormElement;
-      if (form && !form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-      return;
-    }
+    if (!params.location || !params.niche) return;
 
     setState(AppState.SEARCHING);
     setResults([]);
@@ -66,7 +58,8 @@ export const useSearch = (onSearchSuccess: (params: SearchParams, count: number)
     searchRequestId.current++;
 
     try {
-      const data = await searchBusinesses(searchParams);
+      const latLng = await getUserLocation();
+      const data = await searchBusinesses(searchParams, latLng);
       setResults(data);
       setState(AppState.RESULTS);
       if (data.length > 0) {
@@ -74,9 +67,7 @@ export const useSearch = (onSearchSuccess: (params: SearchParams, count: number)
       }
     } catch (err: any) {
       setState(AppState.ERROR);
-      let msg = getErrorMessage(err);
-      if (msg === '{}' || msg === '[object Object]') msg = "Ocorreu um erro interno na API. Tente novamente.";
-      setErrorMsg(msg);
+      setErrorMsg(err.message || "Erro inesperado ao prospectar.");
     }
   };
 
@@ -87,30 +78,32 @@ export const useSearch = (onSearchSuccess: (params: SearchParams, count: number)
       return;
     }
 
-    if (window.confirm("O sistema irá EXPANDIR O RAIO DE BUSCA para encontrar novas empresas em regiões mais distantes. Deseja continuar?")) {
+    if (window.confirm("Expandir área de busca?")) {
       setIsLoadingMore(true);
       searchRequestId.current++;
       const currentRequestId = searchRequestId.current;
       
       try {
         const currentNames = results.map(r => r.nome);
+        const latLng = await getUserLocation();
         const newContacts = await searchBusinesses({
           ...params,
           excludeNames: currentNames
-        });
+        }, latLng);
         
         if (currentRequestId !== searchRequestId.current) return;
         
-        if (newContacts.length === 0) {
-           alert("Não foram encontrados novos contatos mesmo expandindo a área.");
-        } else {
+        if (newContacts.length > 0) {
            const updatedResults = [...results, ...newContacts];
            setResults(updatedResults);
            onSearchSuccess(params, updatedResults.length);
+        } else {
+           alert("Nenhum novo lead encontrado nesta expansão.");
         }
       } catch (err: any) {
-         if (currentRequestId !== searchRequestId.current) return;
-         alert("Erro ao carregar mais: " + getErrorMessage(err));
+         if (currentRequestId === searchRequestId.current) {
+            alert("Erro ao carregar mais leads.");
+         }
       } finally {
          if (currentRequestId === searchRequestId.current) setIsLoadingMore(false);
       }

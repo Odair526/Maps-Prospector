@@ -1,5 +1,7 @@
 {
   "name": "Maps Prospector AI",
   "description": "An AI agent that prospects public business contacts using Google Maps data, featuring a dynamic robot interface and Excel export.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }
