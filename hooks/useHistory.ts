@@ -1,5 +1,5 @@
-
-import { useState, useEffect } from 'react';
+// Added missing React import to resolve namespace errors for event types
+import React, { useState, useEffect } from 'react';
 import { SearchHistoryItem, SearchParams, User } from '../types';
 import { db } from '../services/firebase';
 

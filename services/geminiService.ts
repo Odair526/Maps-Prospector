@@ -1,9 +1,10 @@
-
+// Updated model to gemini-2.5-flash as googleMaps tool is only supported in Gemini 2.5 series models
 import { GoogleGenAI } from "@google/genai";
 import { BusinessContact, SearchParams } from "../types";
 
 const parseJSONResponse = (text: string): BusinessContact[] => {
   try {
+    // Tenta encontrar o bloco de JSON na resposta
     const jsonMatch = text.match(/```json\s*(\[[\s\S]*?\])\s*```/) || text.match(/(\[[\s\S]*?\])/);
     if (jsonMatch) {
       const jsonStr = (jsonMatch[1] || jsonMatch[0]).trim();
@@ -39,44 +40,61 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
     throw new Error("API_KEY não configurada no ambiente.");
   }
 
+  // Use the correct initialization with named parameter
   const ai = new GoogleGenAI({ apiKey });
-  const model = "gemini-2.5-flash";
+  
+  // Maps grounding is only supported in Gemini 2.5 series models.
+  // Switching to 'gemini-2.5-flash' to support the googleMaps tool correctly.
+  const modelName = 'gemini-2.5-flash';
 
   const excludeStr = params.excludeNames?.length 
-    ? `Ignore estas empresas já capturadas: ${params.excludeNames.join(', ')}.` 
+    ? `Ignore terminantemente estas empresas que já temos no banco: ${params.excludeNames.join(', ')}.` 
     : '';
 
+  const deepSearchInstructions = params.fastMode 
+    ? `Objetivo: Retorne rapidamente 5-8 leads principais.`
+    : `Objetivo: REALIZAR VARREDURA EXAUSTIVA. Você deve encontrar o máximo de empresas possível (alvo: 20-30 leads). 
+       Não se limite aos primeiros resultados. Use o Google Search para encontrar e-mails e redes sociais de cada empresa encontrada no Maps. 
+       Se necessário, faça múltiplas pesquisas internas para cobrir diferentes sub-áreas de "${params.location}".`;
+
   const prompt = `
-    Aja como um Agente de Prospecção Digital Avançado.
-    Sua missão é localizar contatos públicos reais para o nicho "${params.niche}" em "${params.location}".
+    Aja como um Agente de Prospecção Digital de Elite especializado em B2B.
+    Localize contatos públicos para o nicho "${params.niche}" (${params.type || ''}) em "${params.location}".
     Raio de busca: ${params.radius || '5km'}.
     ${excludeStr}
 
-    REGRAS:
-    1. Utilize a ferramenta 'googleMaps' para obter endereços, telefones e ratings.
-    2. Utilize a ferramenta 'googleSearch' para enriquecer os resultados com emails e links de redes sociais.
-    3. Retorne OBRIGATORIAMENTE um array JSON dentro de um bloco de código markdown.
+    ${deepSearchInstructions}
+
+    REGRAS CRÍTICAS:
+    1. Utilize 'googleMaps' para identificar os estabelecimentos, coordenadas e reputação.
+    2. Utilize 'googleSearch' para enriquecer os dados. É OBRIGATÓRIO tentar encontrar E-mail e Instagram.
+    3. Verifique se o número é de celular para marcar o campo 'whatsapp' como true.
+    4. Formato de Saída: Retorne APENAS um array JSON dentro de um bloco de código markdown.
     
-    Campos do JSON: nome, telefone, whatsapp (booleano), email, website, instagram, facebook, linkedin, endereco, link_maps, rating, reviewCount.
+    Campos do JSON por objeto: 
+    - nome, telefone, whatsapp (boolean), email, website, instagram, facebook, linkedin, endereco, link_maps, rating, reviewCount.
   `;
 
   const response = await ai.models.generateContent({
-    model: model,
+    model: modelName,
     contents: prompt,
     config: {
+      // tools: googleMaps may be used with googleSearch
       tools: [{ googleMaps: {} }, { googleSearch: {} }],
       toolConfig: latLng ? {
         retrievalConfig: {
           latLng: latLng
         }
       } : undefined,
-      temperature: 0.1,
+      temperature: params.fastMode ? 0.1 : 0.3,
     },
   });
 
+  // Extract text property directly as per guidelines
   const rawText = response.text || "";
   const contacts = parseJSONResponse(rawText);
 
+  // Enriquecimento de links via metadados de grounding se disponíveis
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
   if (chunks && contacts.length > 0) {
     contacts.forEach(contact => {
@@ -90,7 +108,9 @@ export const searchBusinesses = async (params: SearchParams, latLng?: { latitude
 
       if (match) {
         if (match.maps && match.maps.uri) contact.link_maps = match.maps.uri;
-        if (match.web && match.web.uri && !contact.website) contact.website = match.web.uri;
+        if (match.web && match.web.uri && (!contact.website || contact.website === "Não disponível")) {
+          contact.website = match.web.uri;
+        }
       }
     });
   }

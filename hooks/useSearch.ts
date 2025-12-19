@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+// Added missing React import to resolve namespace errors for event types
+import React, { useState, useRef, useEffect } from 'react';
 import { AppState, SearchParams, BusinessContact } from '../types';
 import { searchBusinesses } from '../services/geminiService';
 
